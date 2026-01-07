@@ -2,12 +2,12 @@
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
 
---// CLEAN OLD UI
+--// CLEAN OLD UI & EFFECTS
 pcall(function()
-    if CoreGui:FindFirstChild("RedSoulKeySystem") then
-        CoreGui.RedSoulKeySystem:Destroy()
-    end
+    if CoreGui:FindFirstChild("RedSoulKeySystem") then CoreGui.RedSoulKeySystem:Destroy() end
+    if Lighting:FindFirstChild("KeySystemBlur") then Lighting.KeySystemBlur:Destroy() end
 end)
 
 --// CONFIG
@@ -15,7 +15,8 @@ local CONFIG = {
     API_KEY = "e272e094-2f1e-45ff-a636-55b95ee83ffa",
     SERVICE = "RedsoulHub",
     MAIN_SCRIPT = "https://raw.githubusercontent.com/gamer8410/choco/refs/heads/main/whattt",
-    ACCENT_COLOR = Color3.fromRGB(0, 200, 255)
+    ACCENT = Color3.fromRGB(255, 30, 30), -- Vivid Red
+    BG = Color3.fromRGB(10, 10, 10),      -- Deep Black
 }
 
 local PROVIDERS = {
@@ -25,189 +26,180 @@ local PROVIDERS = {
     ["48h"] = "48-hour-key"
 }
 
---// LOAD SDK
+--// SCREEN BLUR
+local blur = Instance.new("BlurEffect")
+blur.Name = "KeySystemBlur"
+blur.Size = 0
+blur.Parent = Lighting
+TweenService:Create(blur, TweenInfo.new(0.5), {Size = 20}):Play()
+
+--// SDK LOAD
 local Junkie = loadstring(game:HttpGet("https://junkie-development.de/sdk/JunkieKeySystem.lua"))()
 
 --// UI CREATION
 local gui = Instance.new("ScreenGui")
 gui.Name = "RedSoulKeySystem"
-gui.ResetOnSpawn = false
 gui.Parent = CoreGui
 
 local main = Instance.new("Frame")
 main.Name = "Main"
 main.Parent = gui
-main.Size = UDim2.fromOffset(350, 280) -- More compact
+main.Size = UDim2.fromOffset(350, 300)
 main.Position = UDim2.fromScale(0.5, 0.5)
 main.AnchorPoint = Vector2.new(0.5, 0.5)
-main.BackgroundColor3 = Color3.fromRGB(12, 14, 20)
+main.BackgroundColor3 = CONFIG.BG
 main.BorderSizePixel = 0
 
-local corner = Instance.new("UICorner", main)
-corner.CornerRadius = UDim.new(0, 12)
-
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
 local stroke = Instance.new("UIStroke", main)
-stroke.Color = CONFIG.ACCENT_COLOR
-stroke.Thickness = 1.5
-stroke.Transparency = 0.5
+stroke.Color = CONFIG.ACCENT
+stroke.Thickness = 1.8
+stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
---// DRAGGING FUNCTIONALITY
+--// DRAGGING LOGIC
 local dragging, dragInput, dragStart, startPos
-local function update(input)
-    local delta = input.Position - dragStart
-    main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
-
 main.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
         dragStart = input.Position
         startPos = main.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then dragging = false end
-        end)
     end
 end)
-
 main.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then update(input) end
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
 end)
 
 --// TITLE
 local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1, 0, 0, 45)
+title.Size = UDim2.new(1, 0, 0, 50)
 title.BackgroundTransparency = 1
 title.Text = "REDSOUL HUB"
 title.Font = Enum.Font.GothamBlack
-title.TextSize = 18
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 22
+title.TextColor3 = CONFIG.ACCENT
 
-local line = Instance.new("Frame", main)
-line.Size = UDim2.new(0.9, 0, 0, 1)
-line.Position = UDim2.new(0.05, 0, 0, 45)
-line.BackgroundColor3 = CONFIG.ACCENT_COLOR
-line.BackgroundTransparency = 0.7
-line.BorderSizePixel = 0
-
---// KEY INPUT BOX
+--// INPUT BOX
 local keyBox = Instance.new("TextBox", main)
-keyBox.Size = UDim2.new(0.85, 0, 0, 35)
+keyBox.Size = UDim2.new(0.85, 0, 0, 40)
 keyBox.Position = UDim2.new(0.5, 0, 0, 65)
 keyBox.AnchorPoint = Vector2.new(0.5, 0)
-keyBox.PlaceholderText = "Enter Activation Key..."
+keyBox.PlaceholderText = "Paste Key Here..."
 keyBox.Text = ""
 keyBox.Font = Enum.Font.Gotham
 keyBox.TextSize = 14
 keyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-keyBox.BackgroundColor3 = Color3.fromRGB(18, 20, 28)
-keyBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 110)
-Instance.new("UICorner", keyBox).CornerRadius = UDim.new(0, 8)
-Instance.new("UIStroke", keyBox).Color = Color3.fromRGB(40, 40, 50)
+keyBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Instance.new("UICorner", keyBox).CornerRadius = UDim.new(0, 6)
+Instance.new("UIStroke", keyBox).Color = Color3.fromRGB(40, 0, 0)
 
---// BUTTON ANIMATION FUNCTION
-local function animateButton(btn)
-    btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 45, 60)}):Play()
-    end)
-    btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(25, 28, 38)}):Play()
-    end)
-end
+--// BUTTONS HOLDER
+local btnHolder = Instance.new("Frame", main)
+btnHolder.Size = UDim2.new(0.85, 0, 0, 90)
+btnHolder.Position = UDim2.new(0.5, 0, 0, 120)
+btnHolder.AnchorPoint = Vector2.new(0.5, 0)
+btnHolder.BackgroundTransparency = 1
 
---// GET KEY SECTION
-local getGrid = Instance.new("Frame", main)
-getGrid.Size = UDim2.new(0.85, 0, 0, 80)
-getGrid.Position = UDim2.new(0.5, 0, 0, 110)
-getGrid.AnchorPoint = Vector2.new(0.5, 0)
-getGrid.BackgroundTransparency = 1
+local layout = Instance.new("UIGridLayout", btnHolder)
+layout.CellPadding = UDim2.fromOffset(10, 10)
+layout.CellSize = UDim2.new(0.5, -5, 0, 38)
 
-local layout = Instance.new("UIGridLayout", getGrid)
-layout.CellPadding = UDim2.fromOffset(8, 8)
-layout.CellSize = UDim2.new(0.5, -4, 0, 35)
-
-local function createGetKeyButton(duration)
-    local btn = Instance.new("TextButton")
-    btn.Parent = getGrid
-    btn.Text = duration .. " Key"
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 13
-    btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-    btn.BackgroundColor3 = Color3.fromRGB(25, 28, 38)
-    btn.AutoButtonColor = false
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-    animateButton(btn)
-
-    btn.MouseButton1Click:Connect(function()
-        local provider = PROVIDERS[duration]
-        local link = Junkie.getLink(CONFIG.API_KEY, provider, CONFIG.SERVICE)
-        
-        if link and setclipboard then
-            setclipboard(link)
-            btn.Text = "COPIED!"
-            btn.TextColor3 = CONFIG.ACCENT_COLOR
-            task.wait(1.5)
-            btn.Text = duration .. " Key"
-            btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-        end
+local function createBtn(text, duration)
+    local b = Instance.new("TextButton")
+    b.Parent = btnHolder
+    b.Text = text
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 13
+    b.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
+    b.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    
+    b.MouseButton1Click:Connect(function()
+        local link = Junkie.getLink(CONFIG.API_KEY, PROVIDERS[duration], CONFIG.SERVICE)
+        if setclipboard then setclipboard(link) end
+        b.Text = "COPIED!"
+        task.wait(1)
+        b.Text = text
     end)
 end
 
-createGetKeyButton("6h")
-createGetKeyButton("12h")
-createGetKeyButton("24h")
-createGetKeyButton("48h")
+createBtn("Get 6h Key", "6h")
+createBtn("Get 12h Key", "12h")
+createBtn("Get 24h Key", "24h")
+createBtn("Get 48h Key", "48h")
+
+--// NOTIFICATION SYSTEM
+local function notify(msg)
+    local n = Instance.new("Frame", gui)
+    n.Size = UDim2.fromOffset(250, 60)
+    n.Position = UDim2.new(1, 20, 0.8, 0)
+    n.BackgroundColor3 = CONFIG.BG
+    Instance.new("UICorner", n).CornerRadius = UDim.new(0, 8)
+    Instance.new("UIStroke", n).Color = CONFIG.ACCENT
+    
+    local t = Instance.new("TextLabel", n)
+    t.Size = UDim2.new(1, -20, 1, 0)
+    t.Position = UDim2.fromOffset(10, 0)
+    t.BackgroundTransparency = 1
+    t.Text = msg
+    t.Font = Enum.Font.GothamBold
+    t.TextColor3 = Color3.fromRGB(255, 255, 255)
+    t.TextSize = 14
+    t.TextWrapped = true
+
+    n:TweenPosition(UDim2.new(1, -270, 0.8, 0), "Out", "Back", 0.5)
+    task.delay(3, function()
+        n:TweenPosition(UDim2.new(1, 20, 0.8, 0), "In", "Quad", 0.5)
+        task.wait(0.5)
+        n:Destroy()
+    end)
+end
 
 --// VERIFY BUTTON
 local verify = Instance.new("TextButton", main)
-verify.Size = UDim2.new(0.85, 0, 0, 40)
+verify.Size = UDim2.new(0.85, 0, 0, 45)
 verify.Position = UDim2.new(0.5, 0, 1, -20)
 verify.AnchorPoint = Vector2.new(0.5, 1)
-verify.Text = "ACTIVATE SCRIPT"
+verify.BackgroundColor3 = CONFIG.ACCENT
+verify.Text = "VERIFY KEY"
 verify.Font = Enum.Font.GothamBlack
-verify.TextSize = 14
 verify.TextColor3 = Color3.fromRGB(255, 255, 255)
-verify.BackgroundColor3 = CONFIG.ACCENT_COLOR
-verify.AutoButtonColor = false
+verify.TextSize = 16
 Instance.new("UICorner", verify).CornerRadius = UDim.new(0, 8)
 
 verify.MouseButton1Click:Connect(function()
     local key = keyBox.Text:gsub("%s+", "")
-    if key == "" then 
-        keyBox.PlaceholderText = "KEY CANNOT BE EMPTY"
-        return 
-    end
-
-    verify.Text = "VALIDATING..."
-    verify.Active = false
-
-    local success, valid = pcall(function()
-        return Junkie.verifyKey(CONFIG.API_KEY, key, CONFIG.SERVICE)
-    end)
-
-    if success and valid then
-        verify.Text = "SUCCESS!"
-        verify.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-        task.wait(1)
-        gui:Destroy()
+    verify.Text = "CHECKING..."
+    
+    local success = Junkie.verifyKey(CONFIG.API_KEY, key, CONFIG.SERVICE)
+    
+    if success then
+        verify.Text = "SUCCESS"
+        -- Animate Blur and UI removal
+        TweenService:Create(blur, TweenInfo.new(0.5), {Size = 0}):Play()
+        main:TweenSize(UDim2.fromOffset(0, 0), "In", "Back", 0.5)
         
-        local scriptSuccess, err = pcall(function()
-            loadstring(game:HttpGet(CONFIG.MAIN_SCRIPT))()
-        end)
-        if not scriptSuccess then
-            warn("Failed to load main script: " .. tostring(err))
-        end
+        task.wait(0.5)
+        blur:Destroy()
+        main:Destroy()
+        
+        notify("Script Loaded Successfully! Welcome back.")
+        
+        -- Load the actual script
+        loadstring(game:HttpGet(CONFIG.MAIN_SCRIPT))()
     else
         verify.Text = "INVALID KEY"
-        verify.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        verify.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
         task.wait(1.5)
-        verify.Text = "ACTIVATE SCRIPT"
-        verify.BackgroundColor3 = CONFIG.ACCENT_COLOR
-        verify.Active = true
+        verify.Text = "VERIFY KEY"
+        verify.BackgroundColor3 = CONFIG.ACCENT
     end
 end)
-
-print("RedSoul Key System Loaded")
