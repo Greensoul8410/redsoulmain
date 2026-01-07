@@ -15,8 +15,8 @@ local CONFIG = {
     API_KEY = "e272e094-2f1e-45ff-a636-55b95ee83ffa",
     SERVICE = "RedsoulHub",
     MAIN_SCRIPT = "https://raw.githubusercontent.com/gamer8410/choco/refs/heads/main/whattt",
-    ACCENT = Color3.fromRGB(255, 30, 30), -- Vivid Red
-    BG = Color3.fromRGB(10, 10, 10),      -- Deep Black
+    ACCENT = Color3.fromRGB(255, 30, 30), 
+    BG = Color3.fromRGB(10, 10, 10),     
 }
 
 local PROVIDERS = {
@@ -40,6 +40,7 @@ local Junkie = loadstring(game:HttpGet("https://junkie-development.de/sdk/Junkie
 local gui = Instance.new("ScreenGui")
 gui.Name = "RedSoulKeySystem"
 gui.Parent = CoreGui
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local main = Instance.new("Frame")
 main.Name = "Main"
@@ -49,12 +50,12 @@ main.Position = UDim2.fromScale(0.5, 0.5)
 main.AnchorPoint = Vector2.new(0.5, 0.5)
 main.BackgroundColor3 = CONFIG.BG
 main.BorderSizePixel = 0
+main.ClipsDescendants = true
 
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
 local stroke = Instance.new("UIStroke", main)
 stroke.Color = CONFIG.ACCENT
 stroke.Thickness = 1.8
-stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
 --// DRAGGING LOGIC
 local dragging, dragInput, dragStart, startPos
@@ -99,7 +100,7 @@ keyBox.TextSize = 14
 keyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 keyBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 Instance.new("UICorner", keyBox).CornerRadius = UDim.new(0, 6)
-Instance.new("UIStroke", keyBox).Color = Color3.fromRGB(40, 0, 0)
+Instance.new("UIStroke", keyBox).Color = Color3.fromRGB(45, 10, 10)
 
 --// BUTTONS HOLDER
 local btnHolder = Instance.new("Frame", main)
@@ -112,22 +113,41 @@ local layout = Instance.new("UIGridLayout", btnHolder)
 layout.CellPadding = UDim2.fromOffset(10, 10)
 layout.CellSize = UDim2.new(0.5, -5, 0, 38)
 
+--// GET KEY BUTTON LOGIC (FIXED CLIPBOARD ISSUE)
 local function createBtn(text, duration)
     local b = Instance.new("TextButton")
     b.Parent = btnHolder
     b.Text = text
     b.Font = Enum.Font.GothamBold
     b.TextSize = 13
-    b.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
-    b.TextColor3 = Color3.fromRGB(255, 255, 255)
+    b.BackgroundColor3 = Color3.fromRGB(25, 10, 10)
+    b.TextColor3 = Color3.fromRGB(200, 200, 200)
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
     
+    local coolingDown = false
+    
     b.MouseButton1Click:Connect(function()
-        local link = Junkie.getLink(CONFIG.API_KEY, PROVIDERS[duration], CONFIG.SERVICE)
-        if setclipboard then setclipboard(link) end
-        b.Text = "COPIED!"
-        task.wait(1)
-        b.Text = text
+        if coolingDown then return end -- Prevent double-click issues
+        coolingDown = true
+        
+        local provider = PROVIDERS[duration]
+        local link = Junkie.getLink(CONFIG.API_KEY, provider, CONFIG.SERVICE)
+        
+        if link and link ~= "" then
+            setclipboard(tostring(link))
+            b.Text = "LINK COPIED ✓"
+            b.TextColor3 = CONFIG.ACCENT
+            
+            task.wait(2) -- Cooldown for 2 seconds
+            b.Text = text
+            b.TextColor3 = Color3.fromRGB(200, 200, 200)
+            coolingDown = false
+        else
+            b.Text = "API ERROR"
+            task.wait(1)
+            b.Text = text
+            coolingDown = false
+        end
     end)
 end
 
@@ -139,11 +159,14 @@ createBtn("Get 48h Key", "48h")
 --// NOTIFICATION SYSTEM
 local function notify(msg)
     local n = Instance.new("Frame", gui)
-    n.Size = UDim2.fromOffset(250, 60)
-    n.Position = UDim2.new(1, 20, 0.8, 0)
+    n.Size = UDim2.fromOffset(280, 65)
+    n.Position = UDim2.new(1, 30, 0.85, 0)
     n.BackgroundColor3 = CONFIG.BG
+    n.BorderSizePixel = 0
     Instance.new("UICorner", n).CornerRadius = UDim.new(0, 8)
-    Instance.new("UIStroke", n).Color = CONFIG.ACCENT
+    local ns = Instance.new("UIStroke", n)
+    ns.Color = CONFIG.ACCENT
+    ns.Thickness = 2
     
     local t = Instance.new("TextLabel", n)
     t.Size = UDim2.new(1, -20, 1, 0)
@@ -155,10 +178,10 @@ local function notify(msg)
     t.TextSize = 14
     t.TextWrapped = true
 
-    n:TweenPosition(UDim2.new(1, -270, 0.8, 0), "Out", "Back", 0.5)
-    task.delay(3, function()
-        n:TweenPosition(UDim2.new(1, 20, 0.8, 0), "In", "Quad", 0.5)
-        task.wait(0.5)
+    n:TweenPosition(UDim2.new(1, -300, 0.85, 0), "Out", "Back", 0.5)
+    task.delay(4, function()
+        n:TweenPosition(UDim2.new(1, 30, 0.85, 0), "In", "Quad", 0.5)
+        task.wait(0.6)
         n:Destroy()
     end)
 end
@@ -169,37 +192,43 @@ verify.Size = UDim2.new(0.85, 0, 0, 45)
 verify.Position = UDim2.new(0.5, 0, 1, -20)
 verify.AnchorPoint = Vector2.new(0.5, 1)
 verify.BackgroundColor3 = CONFIG.ACCENT
-verify.Text = "VERIFY KEY"
+verify.Text = "VERIFY ACTIVATION"
 verify.Font = Enum.Font.GothamBlack
 verify.TextColor3 = Color3.fromRGB(255, 255, 255)
-verify.TextSize = 16
+verify.TextSize = 15
 Instance.new("UICorner", verify).CornerRadius = UDim.new(0, 8)
 
 verify.MouseButton1Click:Connect(function()
     local key = keyBox.Text:gsub("%s+", "")
-    verify.Text = "CHECKING..."
+    if key == "" then return end
+    
+    verify.Text = "VALIDATING..."
+    verify.Active = false
     
     local success = Junkie.verifyKey(CONFIG.API_KEY, key, CONFIG.SERVICE)
     
     if success then
-        verify.Text = "SUCCESS"
-        -- Animate Blur and UI removal
-        TweenService:Create(blur, TweenInfo.new(0.5), {Size = 0}):Play()
+        verify.Text = "ACCESS GRANTED"
+        verify.BackgroundColor3 = Color3.fromRGB(0, 200, 50)
+        
+        -- Clean up UI
+        TweenService:Create(blur, TweenInfo.new(0.6), {Size = 0}):Play()
         main:TweenSize(UDim2.fromOffset(0, 0), "In", "Back", 0.5)
         
-        task.wait(0.5)
+        task.wait(0.6)
         blur:Destroy()
-        main:Destroy()
+        gui:Destroy()
         
-        notify("Script Loaded Successfully! Welcome back.")
+        notify("RedSoul Hub Loaded Successfully! Enjoy.")
         
-        -- Load the actual script
+        -- Execute Main Script
         loadstring(game:HttpGet(CONFIG.MAIN_SCRIPT))()
     else
-        verify.Text = "INVALID KEY"
+        verify.Text = "INVALID OR EXPIRED KEY"
         verify.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-        task.wait(1.5)
-        verify.Text = "VERIFY KEY"
+        task.wait(2)
+        verify.Text = "VERIFY ACTIVATION"
         verify.BackgroundColor3 = CONFIG.ACCENT
+        verify.Active = true
     end
 end)
