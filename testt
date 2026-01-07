@@ -1,6 +1,15 @@
+12-hour-key--========================================
+-- FUTURISTIC JUNKIE KEY SYSTEM (FIXED)
 --========================================
--- FUTURISTIC JUNKIE KEY SYSTEM (COMPACT)
---========================================
+
+--// SERVICES
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+
+--// CLEAN OLD UI
+pcall(function()
+    CoreGui.FuturisticKeySystem:Destroy()
+end)
 
 --// CONFIG
 local CONFIG = {
@@ -9,34 +18,37 @@ local CONFIG = {
     MAIN_SCRIPT = "https://raw.githubusercontent.com/gamer8410/choco/refs/heads/main/whattt"
 }
 
+--// PROVIDERS (YOU SET THESE IN JUNKIE DASHBOARD)
 local PROVIDERS = {
-    ["6h"]  = "Checkpoint-1",
-    ["12h"] = "12-hour-key",
-    ["24h"] = "24-hour-key",
-    ["48h"] = "48-hour-key"
+    ["6h"]  = "Checkpoint-1",   -- 1 checkpoint, 6h validity
+    ["12h"] = "12-hour-key",   -- 2 checkpoints, 12h
+    ["24h"] = "24-hour-key",   -- 3 checkpoints, 24h
+    ["48h"] = "48-hour-key"    -- 4 checkpoints, 48h
 }
 
---// LOAD SDK
+--// LOAD JUNKIE SDK
 local Junkie = loadstring(game:HttpGet(
     "https://junkie-development.de/sdk/JunkieKeySystem.lua"
 ))()
 
---// SERVICES
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
+--========================================
+-- UI
+--========================================
 
---// GUI
-local gui = Instance.new("ScreenGui", player.PlayerGui)
+local gui = Instance.new("ScreenGui")
 gui.Name = "FuturisticKeySystem"
 gui.ResetOnSpawn = false
+gui.Parent = CoreGui
 
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.fromOffset(380, 390)
+local main = Instance.new("Frame")
+main.Parent = gui
+main.Size = UDim2.fromOffset(380, 360)
 main.Position = UDim2.fromScale(0.5, 0.5)
 main.AnchorPoint = Vector2.new(0.5, 0.5)
 main.BackgroundColor3 = Color3.fromRGB(14, 16, 22)
 main.BorderSizePixel = 0
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 20)
+
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 18)
 
 local stroke = Instance.new("UIStroke", main)
 stroke.Color = Color3.fromRGB(0, 200, 255)
@@ -46,29 +58,33 @@ stroke.Thickness = 2
 local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1, 0, 0, 50)
 title.BackgroundTransparency = 1
-title.Text = "KEY SYSTEM"
+title.Text = "REDSOUL KEY SYSTEM"
 title.Font = Enum.Font.GothamBlack
-title.TextSize = 22
+title.TextSize = 20
 title.TextColor3 = Color3.fromRGB(0, 220, 255)
 
 --// BUTTON HOLDER
 local holder = Instance.new("Frame", main)
-holder.Position = UDim2.new(0.5, 0, 0, 65)
+holder.Position = UDim2.new(0.5, 0, 0, 60)
 holder.AnchorPoint = Vector2.new(0.5, 0)
-holder.Size = UDim2.new(1, -30, 180)
+holder.Size = UDim2.new(1, -40, 170)
 holder.BackgroundTransparency = 1
 
 local layout = Instance.new("UIListLayout", holder)
-layout.Padding = UDim.new(0, 8)
+layout.Padding = UDim.new(0, 10)
 layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
---// CREATE GET-KEY BUTTON
+--========================================
+-- GET KEY BUTTON CREATOR
+--========================================
+
 local function createGetKeyButton(duration)
-    local btn = Instance.new("TextButton", holder)
+    local btn = Instance.new("TextButton")
+    btn.Parent = holder
     btn.Size = UDim2.fromOffset(260, 40)
     btn.Text = "GET " .. duration .. " KEY"
     btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 15
+    btn.TextSize = 16
     btn.TextColor3 = Color3.fromRGB(230, 245, 255)
     btn.BackgroundColor3 = Color3.fromRGB(26, 30, 42)
     btn.AutoButtonColor = false
@@ -77,12 +93,17 @@ local function createGetKeyButton(duration)
     btn.MouseButton1Click:Connect(function()
         local provider = PROVIDERS[duration]
         local link = Junkie.getLink(CONFIG.API_KEY, provider, CONFIG.SERVICE)
+
         if link and setclipboard then
             setclipboard(link)
         end
+
         btn.Text = "LINK COPIED ✓"
-        task.delay(1, function()
+        btn.BackgroundColor3 = Color3.fromRGB(0, 160, 120)
+
+        task.delay(1.2, function()
             btn.Text = "GET " .. duration .. " KEY"
+            btn.BackgroundColor3 = Color3.fromRGB(26, 30, 42)
         end)
     end)
 end
@@ -92,48 +113,54 @@ createGetKeyButton("12h")
 createGetKeyButton("24h")
 createGetKeyButton("48h")
 
---// KEY INPUT
+--========================================
+-- KEY INPUT
+--========================================
+
 local keyBox = Instance.new("TextBox", main)
-keyBox.Size = UDim2.fromOffset(280, 38)
-keyBox.Position = UDim2.new(0.5, 0, 0, 260)
+keyBox.Size = UDim2.fromOffset(260, 40)
+keyBox.Position = UDim2.new(0.5, 0, 0, 245)
 keyBox.AnchorPoint = Vector2.new(0.5, 0)
-keyBox.PlaceholderText = "Paste key here..."
+keyBox.PlaceholderText = "Paste your key here..."
 keyBox.Font = Enum.Font.Gotham
-keyBox.TextSize = 14
+keyBox.TextSize = 15
 keyBox.TextColor3 = Color3.fromRGB(230,230,230)
 keyBox.BackgroundColor3 = Color3.fromRGB(20, 24, 36)
 keyBox.ClearTextOnFocus = false
-Instance.new("UICorner", keyBox).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", keyBox).CornerRadius = UDim.new(0, 14)
 
---// VERIFY BUTTON
+--========================================
+-- VERIFY BUTTON
+--========================================
+
 local verify = Instance.new("TextButton", main)
-verify.Size = UDim2.fromOffset(180, 40)
-verify.Position = UDim2.new(0.5, 0, 0, 315)
+verify.Size = UDim2.fromOffset(200, 42)
+verify.Position = UDim2.new(0.5, 0, 0, 295)
 verify.AnchorPoint = Vector2.new(0.5, 0)
 verify.Text = "VERIFY KEY"
 verify.Font = Enum.Font.GothamBold
-verify.TextSize = 15
+verify.TextSize = 16
 verify.TextColor3 = Color3.fromRGB(255,255,255)
 verify.BackgroundColor3 = Color3.fromRGB(0, 160, 120)
 verify.AutoButtonColor = false
 Instance.new("UICorner", verify).CornerRadius = UDim.new(0, 16)
 
---// VERIFY LOGIC
 verify.MouseButton1Click:Connect(function()
     local key = keyBox.Text:gsub("%s+", "")
     if key == "" then return end
 
     verify.Text = "CHECKING..."
+
     local valid = Junkie.verifyKey(CONFIG.API_KEY, key, CONFIG.SERVICE)
 
     if valid then
         verify.Text = "SUCCESS ✓"
-        task.wait(0.6)
+        task.wait(0.5)
         gui:Destroy()
         loadstring(game:HttpGet(CONFIG.MAIN_SCRIPT))()
     else
         verify.Text = "INVALID KEY"
-        task.delay(1.1, function()
+        task.delay(1.2, function()
             verify.Text = "VERIFY KEY"
         end)
     end
