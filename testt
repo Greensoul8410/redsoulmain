@@ -6,7 +6,7 @@ local Lighting = game:GetService("Lighting")
 
 --// CONFIG
 local CONFIG = {
-    API_KEY = "e272e094-2f1e-45ff-a636-55b95ee83ffa",
+    API_KEY = "7c94e4bd-0ec3-42a7-b770-756f6eb256fd",
     SERVICE = "RedsoulHub",
     MAIN_SCRIPT = "https://raw.githubusercontent.com/gamer8410/choco/refs/heads/main/whattt",
     ACCENT = Color3.fromRGB(255, 30, 30), 
